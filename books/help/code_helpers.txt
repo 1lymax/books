@@ -1,0 +1,13 @@
+class AnalyticsFilterBackend(generic_filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        predicate = request.query_params # or request.data for POST
+
+        if predicate.get('from_date', None) is not None and predicate.get('to_date', None) is not None:
+            queryset = queryset.filter(your_date__range=(predicate['from_date'], predicate['to_date']))
+
+        if predicate.get('from_date', None) is not None and predicate.get('to_date', None) is None:
+            queryset = queryset.filter(your_date__gte=predicate['from_date'])
+
+        if predicate.get('to_date', None) is not None and predicate.get('from_date', None) is None:
+            queryset = queryset.filter(your_date__lte=predicate['to_date'])
+        return queryset

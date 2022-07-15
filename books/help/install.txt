@@ -1,0 +1,5 @@
+django
+djangoframework
+psycopg2
+coverage
+django-filter 2.4
