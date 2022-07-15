@@ -58,7 +58,7 @@ ROOT_URLCONF = 'books.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -95,8 +95,13 @@ DATABASES = {
 }
 '''
 AUTHENTICATION_BACKENDS = (
+    'social_core.backends.github.GithubOAuth2',
+
     'django.contrib.auth.backends.ModelBackend',
 )
+
+SOCIAL_AUTH_GITHUB_KEY = 'd2954d999c03045e024d'
+SOCIAL_AUTH_GITHUB_SECRET = 'd571d75401831d4f0f0bd08c8dec692c2e562f1d'
 
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 

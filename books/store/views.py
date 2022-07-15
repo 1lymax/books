@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -26,3 +27,7 @@ class BookViewSet(ModelViewSet):
         if predicate.get('max_price', None) is not None and predicate.get('min_price', None) is None:
             queryset = self.queryset.filter(price__lte=predicate['max_price'])
         return queryset
+
+
+def auth(request):
+    return render(request, 'oauth.html')
