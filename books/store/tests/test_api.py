@@ -2,7 +2,9 @@ import json
 import os
 
 from django.contrib.auth.models import User
-from django.db.models import Count, Case, When, Avg
+from django.db import connection
+from django.db.models import Count, Case, When, Avg, F
+from django.test.utils import CaptureQueriesContext
 from rest_framework.exceptions import ErrorDetail
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "books.settings")
@@ -32,23 +34,27 @@ class BooksApiTestCase(APITestCase):
 
     def test_get(self):
         url = reverse('book-list')
-        response = self.client.get(url)
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(url)
+            self.assertEqual(2, len(queries))
         books = Book.objects.all().annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+            owner_name=F('owner__username'),
             rating = Avg('userbookrelation__rate')
-        )
+        ).order_by('id')
         serializer_data = BooksSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
-        self.assertEqual(serializer_data[0]['rating'], '5.00')
-        self.assertEqual(serializer_data[0]['likes_count'], 1)
-        self.assertEqual(serializer_data[0]['annotated_likes'], 1)
+        self.assertEqual(serializer_data[1]['rating'], '5.00')
+        # self.assertEqual(serializer_data[0]['likes_count'], 1)
+        self.assertEqual(serializer_data[1]['annotated_likes'], 1)
 
 
     def test_get_filter(self):
         url = reverse('book-list')
         books = Book.objects.filter(price=55).annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+            owner_name=F('owner__username'),
             rating = Avg('userbookrelation__rate')
         )
         response = self.client.get(url, data={'price': 55})
@@ -60,6 +66,7 @@ class BooksApiTestCase(APITestCase):
         url = reverse('book-list')
         books = Book.objects.filter(id__in=[self.book_1.id, self.book_3.id]).annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+            owner_name=F('owner__username'),
             rating=Avg('userbookrelation__rate')
         )
         response = self.client.get(url, data={'search': 'Author 1'})
@@ -73,19 +80,21 @@ class BooksApiTestCase(APITestCase):
         url = reverse('book-list')
         books = Book.objects.all().annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+            owner_name=F('owner__username'),
             rating=Avg('userbookrelation__rate')
-        ).order_by('author_name')
+        ).order_by('author_name').select_related('owner')
         response = self.client.get(url, data={'ordering': 'author_name'})
         serializer_data = BooksSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(serializer_data, response.data, response.data)
+        self.assertEqual(serializer_data, response.data)
 
     def test_get_ordering_descending(self):
         url = reverse('book-list')
         books = Book.objects.all().annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+            owner_name=F('owner__username'),
             rating=Avg('userbookrelation__rate')
-        ).order_by('-author_name')
+        ).select_related('owner').order_by('-author_name')
         response = self.client.get(url, data={'ordering': '-author_name'})
         serializer_data = BooksSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
@@ -248,6 +257,6 @@ class UserBookRelationTestCase(APITestCase):
         json_data = json.dumps(data)
         response = self.client.patch(url, data=json_data,
                                      content_type='application/json')
-        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code, response.data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         self.assertEqual({'rate': [ErrorDetail(string='"6" is not a valid choice.', code='invalid_choice')]},
-                         response.data)
+                          response.data)

@@ -3,3 +3,11 @@ djangoframework
 psycopg2
 coverage
 django-filter 2.4
+django-debug-toolbar
+django-debug-toolbar-force
+
+For Windows, you need to edit the registry. Set HKEY_CLASSES_ROOT\.js\Content Type to text/javascript.
+#settings.py
+if DEBUG:
+    import mimetypes
+    mimetypes.add_type("application/javascript", ".js", True)

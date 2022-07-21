@@ -8,14 +8,14 @@ from store.serializers import BooksSerializer
 
 class BookSerializerTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='test_user')
-        self.user2 = User.objects.create_user(username='test_user2')
-        self.user3 = User.objects.create_user(username='test_user3')
+        self.user = User.objects.create_user(username='test_user', first_name='Sergey', last_name='Ivanov')
+        self.user2 = User.objects.create_user(username='test_user2', first_name='Petr', last_name='Sidorov')
+        self.user3 = User.objects.create_user(username='test_user3', first_name='Anton', last_name='Gudimov')
 
         self.book_1 = Book.objects.create(name='Test book 1', price=25,
-                                     author_name='Author 1', owner=self.user)
+                                          author_name='Author 1', owner=self.user)
         self.book_2 = Book.objects.create(name='Test book 2', price=55,
-                                     author_name='Author 3', owner=self.user)
+                                          author_name='Author 3', owner=self.user)
 
     def test_ok(self):
         UserBookRelation.objects.create(user=self.user, book=self.book_1, like=True, rate=5)
@@ -28,7 +28,7 @@ class BookSerializerTestCase(TestCase):
 
         books = Book.objects.all().annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating = Avg('userbookrelation__rate')
+            rating=Avg('userbookrelation__rate')
         ).order_by('id')
         data = BooksSerializer(books, many=True).data
         expected_data = [
@@ -37,19 +37,48 @@ class BookSerializerTestCase(TestCase):
                 'name': 'Test book 1',
                 'price': '25.00',
                 'author_name': 'Author 1',
-                'likes_count': 3,
+                # 'likes_count': 3,
                 'annotated_likes': 3,
-                'rating': '4.67'
+                'rating': '4.67',
+                'owner_name': self.user.username,
+                'readers': [
+                    {
+                        'first_name': 'Sergey',
+                        'last_name': 'Ivanov'
+                    },
+                    {
+                        'first_name': 'Petr',
+                        'last_name': 'Sidorov'
+                    },
+                    {
+                        'first_name': 'Anton',
+                        'last_name': 'Gudimov'
+                    }
+                ]
             },
             {
                 'id': self.book_2.id,
                 'name': 'Test book 2',
                 'price': '55.00',
                 'author_name': 'Author 3',
-                'likes_count': 2,
+                # 'likes_count': 2,
                 'annotated_likes': 2,
-                'rating': '2.50'
+                'rating': '2.50',
+                'owner_name': self.user.username,
+                'readers': [
+                    {
+                        'first_name': 'Sergey',
+                        'last_name': 'Ivanov'
+                    },
+                    {
+                        'first_name': 'Petr',
+                        'last_name': 'Sidorov'
+                    },
+                    {
+                        'first_name': 'Anton',
+                        'last_name': 'Gudimov'
+                    }
+                ]
             }
         ]
-
-        self.assertEqual(expected_data, data, data)
+        self.assertEqual(expected_data, data)
