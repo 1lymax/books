@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.db.models import Count, Case, When, Avg
+from django.db.models import Count, Case, When, Avg, F
 from django.test import TestCase
 
 from store.models import Book, UserBookRelation
@@ -28,7 +28,7 @@ class BookSerializerTestCase(TestCase):
 
         books = Book.objects.all().annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate')
+            owner_name=F('owner__username'),
         ).order_by('id')
         data = BooksSerializer(books, many=True).data
         expected_data = [
@@ -81,4 +81,6 @@ class BookSerializerTestCase(TestCase):
                 ]
             }
         ]
+        print(expected_data, sep='\n\n')
+        print(data, sep='\n\n')
         self.assertEqual(expected_data, data)

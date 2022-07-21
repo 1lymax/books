@@ -15,7 +15,7 @@ class BookViewSet(ModelViewSet):
     queryset = Book.objects.all().annotate(
             annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
             owner_name = F('owner__username'),
-            rating = Avg('userbookrelation__rate')
+            #rating = Avg('userbookrelation__rate')
         ).prefetch_related('readers')
     serializer_class = BooksSerializer
     permission_classes = [IsOwnerOrStaffOrReadOnly]
