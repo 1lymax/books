@@ -4,6 +4,7 @@ from rest_framework.serializers import ModelSerializer
 
 from store.models import Book, UserBookRelation
 
+
 class BookReaderSerializer(ModelSerializer):
     class Meta:
         model = User
@@ -22,13 +23,11 @@ class BooksSerializer(ModelSerializer):
         # fields = ('id', 'name', 'price', 'author_name', 'likes_count', 'annotated_likes', 'rating')
         fields = ('id', 'name', 'price', 'author_name', 'annotated_likes', 'rating', 'owner_name', 'readers')
 
-    # def get_likes_count(self, instance):
-    #         return UserBookRelation.objects.filter(book=instance, like=True).count()
+    def get_likes_count(self, instance):
+            return UserBookRelation.objects.filter(book=instance, like=True).count()
+
 
 class UserBookRelationSerializer(ModelSerializer):
     class Meta:
-
         model = UserBookRelation
         fields = ('id', 'book', 'like', 'in_bookmarks', 'rate')
-
-
